@@ -32,11 +32,6 @@ export function createGallery(images) {
   lightbox.refresh();
 }
 
-export function ScrollGallery() {
-  const cardSize = document.querySelector('.card').getBoundingClientRect();
-  scrollBy({ top: cardSize.height * 2, behavior: 'smooth' });
-}
-
 export function clearGallery() {
   gallery.innerHTML = '';
 }

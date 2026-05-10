@@ -9,7 +9,6 @@ import {
   hideLoader,
   showLoadMoreButton,
   hideLoadMoreButton,
-  ScrollGallery,
 } from './js/render-functions';
 
 const form = document.querySelector('.form');
@@ -21,7 +20,7 @@ const hitsPerPage = 15;
 
 hideLoader();
 
-form.addEventListener('submit', e => {
+form.addEventListener('submit', async e => {
   e.preventDefault();
 
   query = form.elements.search.value;
@@ -29,74 +28,95 @@ form.addEventListener('submit', e => {
 
   form.reset();
   clearGallery();
-  showLoader();
   hideLoadMoreButton();
 
-  if (query.trim()) {
-    getImagesByQuery(query, page)
-      .then(data => {
-        if (data.hits.length > 0) {
-          if (page >= Math.ceil(data.totalHits / hitsPerPage)) {
-            hideLoadMoreButton();
-            iziToast.info({
-              message: `We're sorry, but you've reached the end of search results.`,
-              position: 'topRight',
-            });
-          } else {
-            showLoadMoreButton();
-          }
+  if (!query.trim()) return;
 
-          createGallery(data.hits);
-        } else
-          iziToast.error({
-            message:
-              'Sorry, there are no images matching your search query. Please try again!',
-            position: 'topRight',
-          });
-      })
-      .catch(error => {
-        iziToast.error({
-          message: error.message,
-          position: 'topRight',
-        });
-      })
-      .finally(hideLoader);
+  try {
+    showLoader();
+
+    const data = await getImagesByQuery(query, page);
+
+    if (data.hits.length === 0) {
+      iziToast.error({
+        message:
+          'Sorry, there are no images matching your search query. Please try again!',
+        position: 'topRight',
+      });
+
+      return;
+    }
+
+    createGallery(data.hits);
+
+    const totalPages = Math.ceil(data.totalHits / hitsPerPage);
+
+    if (page >= totalPages) {
+      hideLoadMoreButton();
+
+      iziToast.info({
+        message: `We're sorry, but you've reached the end of search results.`,
+        position: 'topRight',
+      });
+    } else {
+      showLoadMoreButton();
+    }
+  } catch (error) {
+    iziToast.error({
+      message: error.message,
+      position: 'topRight',
+    });
+  } finally {
+    hideLoader();
   }
 });
 
-loadMoreBtn.addEventListener('click', e => {
+loadMoreBtn.addEventListener('click', async e => {
   page += 1;
 
-  showLoader();
   hideLoadMoreButton();
 
-  getImagesByQuery(query, page)
-    .then(data => {
-      if (data.hits.length > 0) {
-        if (page >= Math.ceil(data.totalHits / hitsPerPage)) {
-          hideLoadMoreButton();
-          iziToast.info({
-            message: `We're sorry, but you've reached the end of search results.`,
-            position: 'topRight',
-          });
-        } else {
-          showLoadMoreButton();
-        }
+  try {
+    showLoader();
 
-        createGallery(data.hits);
-        ScrollGallery();
-      } else
-        iziToast.error({
-          message:
-            'Sorry, there are no images matching your search query. Please try again!',
-          position: 'topRight',
-        });
-    })
-    .catch(error => {
+    const data = await getImagesByQuery(query, page);
+
+    if (data.hits.length === 0) {
       iziToast.error({
-        message: error.message,
+        message:
+          'Sorry, there are no images matching your search query. Please try again!',
         position: 'topRight',
       });
-    })
-    .finally(hideLoader);
+
+      return;
+    }
+
+    createGallery(data.hits);
+    ScrollGallery();
+
+    const totalPages = Math.ceil(data.totalHits / hitsPerPage);
+
+    if (page >= totalPages) {
+      hideLoadMoreButton();
+
+      iziToast.info({
+        message: `We're sorry, but you've reached the end of search results.`,
+        position: 'topRight',
+      });
+    } else {
+      showLoadMoreButton();
+    }
+  } catch (error) {
+    iziToast.error({
+      message: error.message,
+      position: 'topRight',
+    });
+  } finally {
+    hideLoader();
+  }
 });
+
+function ScrollGallery() {
+  const cardSize = document.querySelector('.card').getBoundingClientRect();
+  scrollBy({ top: cardSize.height * 2, behavior: 'smooth' });
+}

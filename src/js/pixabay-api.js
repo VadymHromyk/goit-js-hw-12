@@ -16,7 +16,5 @@ export async function getImagesByQuery(query, page) {
 
   const response = await axios.get(pixabayURL, { params });
 
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
   return response.data;
 }
